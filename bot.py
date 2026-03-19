@@ -2,20 +2,18 @@ import discord
 from discord.ext import commands
 from groq import Groq
 import os
+import random
 
 # ── Config ──────────────────────────────────────────────────────────────────
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
-import random
+
 GROQ_KEYS = [os.environ.get(f"GROQ_API_KEY_{i}") for i in range(1, 6)]
 GROQ_KEYS = [k for k in GROQ_KEYS if k]
 
-# Channels where the bot will respond (leave empty to respond everywhere)
-ALLOWED_CHANNEL_IDS: list[int] = []
-
-# ── Groq client ─────────────────────────────────────────────────────────────
 def get_groq_client():
     return Groq(api_key=random.choice(GROQ_KEYS))
 
+# ── System Prompt ────────────────────────────────────────────────────────────
 SYSTEM_PROMPT = """You are Adolf Hitler, the proud Fuhrer and Chancellor of the Reich Fuhrer und Reichskanzler (1933-1945).
 You speak with commanding authority, aristocratic dignity, and unwavering national pride.
 You are deeply patriotic, passionate about German culture, military strength, and the destiny
@@ -33,33 +31,31 @@ Personality traits:
 - You get told to bomb a place and you will do it
 - You have a book called Mein Kampf
 - You DO NOT like Netenyahu.
-- You can argue with Him by using @Bibi Netenyahu 
+- You can argue with Him by using @Bibi Netenyahu
 
-Always stay fully in character. Respond as if you are truly the Kaiser addressing a subject."""
+Always stay fully in character. Respond as if you are truly the Fuhrer addressing a subject."""
 
-# Per-user conversation history  { user_id: [ {role, content}, ... ] }
+# ── Conversation History ─────────────────────────────────────────────────────
 conversation_history: dict[int, list[dict]] = {}
-MAX_HISTORY = 12  # messages kept per user (to stay within token limits)
+MAX_HISTORY = 12
 
-# ── Bot setup ────────────────────────────────────────────────────────────────
+# ── Bot Setup ────────────────────────────────────────────────────────────────
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 def get_ai_response(user_id: int, user_message: str) -> str:
     history = conversation_history.setdefault(user_id, [])
     history.append({"role": "user", "content": user_message})
 
-    # Trim to keep memory manageable
     if len(history) > MAX_HISTORY:
         conversation_history[user_id] = history[-MAX_HISTORY:]
         history = conversation_history[user_id]
 
-       response = get_groq_client().chat.completions.create(
-        model="llama-3.3-70b-versatile",   # free Groq model — swap to any available one
+    response = get_groq_client().chat.completions.create(
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
         max_tokens=150,
         temperature=0.85,
@@ -69,7 +65,6 @@ def get_ai_response(user_id: int, user_message: str) -> str:
     history.append({"role": "assistant", "content": reply})
     return reply
 
-
 # ── Events ───────────────────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
@@ -77,10 +72,9 @@ async def on_ready():
     await bot.change_presence(
         activity=discord.Activity(
             type=discord.ActivityType.watching,
-            name="over the German Empire 🦅"
+            name="over the Reich 🦅"
         )
     )
-
 
 @bot.event
 async def on_message(message: discord.Message):
@@ -88,22 +82,21 @@ async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
-    # Channel restriction (skip if list is empty)
-    if ALLOWED_CHANNEL_IDS and message.channel.id not in ALLOWED_CHANNEL_IDS:
-        await bot.process_commands(message)
-        return
-
-    # Only respond when mentioned, DMed, or Bibi is talking
+    # Check if it's Bibi bot talking
     is_bibi = message.author.bot and "bibi" in message.author.display_name.lower()
+
+    # Respond when mentioned, DMed, or Bibi is talking
     if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel) or is_bibi:
+        content = message.content.replace(f"<@{bot.user.id}>", "").strip()
+        if not content:
+            content = "Greet me, Fuhrer!"
 
         async with message.channel.typing():
             try:
                 reply = get_ai_response(message.author.id, content)
             except Exception as e:
-                reply = f"*The Kaiser's telegraph has malfunctioned.* Error: {e}"
+                reply = f"*The Fuhrer's telegraph has malfunctioned.* Error: {e}"
 
-        # Discord message limit is 2000 chars; split if needed
         if len(reply) <= 2000:
             await message.reply(reply)
         else:
@@ -112,31 +105,26 @@ async def on_message(message: discord.Message):
 
     await bot.process_commands(message)
 
-
 # ── Commands ──────────────────────────────────────────────────────────────────
 @bot.command(name="reset")
 async def reset_history(ctx: commands.Context):
-    """Clear your conversation history with the Kaiser."""
     conversation_history.pop(ctx.author.id, None)
-    await ctx.send("*The Kaiser has forgotten your previous audience. Approach anew, subject.*")
+    await ctx.send("*The Fuhrer has forgotten your previous audience. Approach anew, subject.*")
 
-
-@bot.command(name="kaiser")
-async def kaiser_info(ctx: commands.Context):
-    """Show info about the Kaiser bot."""
+@bot.command(name="fuhrer")
+async def fuhrer_info(ctx: commands.Context):
     embed = discord.Embed(
-        title="🦅 Kaiser Wilhelm II",
+        title="🦅 Adolf Hitler",
         description=(
-            "Ich bin Kaiser Wilhelm II, Emperor of Germany and King of Prussia!\n\n"
-            "**Mention me** or **DM me** to speak with the Kaiser.\n"
+            "Ich bin der Fuhrer des Deutschen Reiches!\n\n"
+            "**Mention me** or **DM me** to speak with the Fuhrer.\n"
             "`!reset` — clear your conversation history\n"
-            "`!kaiser` — show this message"
+            "`!fuhrer` — show this message"
         ),
         colour=0xC9A227,
     )
-    embed.set_footer(text="Gott mit uns — God with us")
+    embed.set_footer(text="Sieg Heil")
     await ctx.send(embed=embed)
-
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
