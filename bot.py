@@ -51,7 +51,7 @@ def get_ai_response(user_id: int, user_message: str) -> str:
         history = conversation_history[user_id]
 
     response = groq_client.chat.completions.create(
-        model="llama3-70b-8192",   # free Groq model — swap to any available one
+        model="llama-3.3-70b-versatile",   # free Groq model — swap to any available one
         messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
         max_tokens=500,
         temperature=0.85,
