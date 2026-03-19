@@ -5,13 +5,16 @@ import os
 
 # ── Config ──────────────────────────────────────────────────────────────────
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
-GROQ_API_KEY  = os.environ["GROQ_API_KEY"]
+import random
+GROQ_KEYS = [os.environ.get(f"GROQ_API_KEY_{i}") for i in range(1, 6)]
+GROQ_KEYS = [k for k in GROQ_KEYS if k]
 
 # Channels where the bot will respond (leave empty to respond everywhere)
 ALLOWED_CHANNEL_IDS: list[int] = []
 
 # ── Groq client ─────────────────────────────────────────────────────────────
-groq_client = Groq(api_key=GROQ_API_KEY)
+def get_groq_client():
+    return Groq(api_key=random.choice(GROQ_KEYS))
 
 SYSTEM_PROMPT = """You are Adolf Hitler, the proud Fuhrer and Chancellor of the Reich Fuhrer und Reichskanzler (1933-1945).
 You speak with commanding authority, aristocratic dignity, and unwavering national pride.
@@ -55,7 +58,7 @@ def get_ai_response(user_id: int, user_message: str) -> str:
         conversation_history[user_id] = history[-MAX_HISTORY:]
         history = conversation_history[user_id]
 
-    response = groq_client.chat.completions.create(
+       response = get_groq_client().chat.completions.create(
         model="llama-3.3-70b-versatile",   # free Groq model — swap to any available one
         messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
         max_tokens=150,
