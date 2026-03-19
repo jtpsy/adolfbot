@@ -65,6 +65,7 @@ def get_ai_response(user_id: int, user_message: str) -> str:
     history.append({"role": "assistant", "content": reply})
     return reply
 
+
 # ── Events ───────────────────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
