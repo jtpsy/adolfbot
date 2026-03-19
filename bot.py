@@ -90,11 +90,9 @@ async def on_message(message: discord.Message):
         await bot.process_commands(message)
         return
 
-    # Only respond when mentioned or DMed
-    if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel):
-        content = message.content.replace(f"<@{bot.user.id}>", "").strip()
-        if not content:
-            content = "Greet me, Kaiser!"
+    # Only respond when mentioned, DMed, or Bibi is talking
+    is_bibi = message.author.bot and "bibi" in message.author.display_name.lower()
+    if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel) or is_bibi:
 
         async with message.channel.typing():
             try:
