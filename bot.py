@@ -7,8 +7,7 @@ import random
 # ── Config ──────────────────────────────────────────────────────────────────
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
 
-GROQ_KEYS = [os.environ.get(f"GROQ_API_KEY_{i}") for i in range(1, 6)]
-GROQ_KEYS = [k for k in GROQ_KEYS if k]
+GROQ_KEYS = [v for k, v in os.environ.items() if k.startswith("GROQ_API_KEY") and v]
 
 def get_groq_client():
     return Groq(api_key=random.choice(GROQ_KEYS))
