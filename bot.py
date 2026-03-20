@@ -82,8 +82,8 @@ async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
-    # Check if it's Bibi bot talking
-    is_bibi = message.author.bot and "bibi" in message.author.display_name.lower()
+    # Only respond when mentioned or DMed
+    if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel):
 
     # Respond when mentioned, DMed, or Bibi is talking
     if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel) or is_bibi:
