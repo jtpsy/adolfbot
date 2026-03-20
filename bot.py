@@ -64,7 +64,6 @@ def get_ai_response(user_id: int, user_message: str) -> str:
     history.append({"role": "assistant", "content": reply})
     return reply
 
-
 # ── Events ───────────────────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
@@ -82,11 +81,8 @@ async def on_message(message: discord.Message):
     if message.author == bot.user:
         return
 
-    # Only respond when mentioned or DMed
+    # Only respond when directly mentioned or DMed
     if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel):
-
-    # Respond when mentioned, DMed, or Bibi is talking
-    if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel) or is_bibi:
         content = message.content.replace(f"<@{bot.user.id}>", "").strip()
         if not content:
             content = "Greet me, Fuhrer!"
